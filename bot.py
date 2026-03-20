@@ -1,10 +1,10 @@
 import os
+import anthropic
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-import anthropic
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 conversation_history = {}
@@ -40,13 +40,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"Ошибка: {str(e)}")
 
-def main():
+if __name__ == "__main__":
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("reset", reset))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     print("Бот запущен...")
     app.run_polling()
-
-if __name__ == "__main__":
-    main()
