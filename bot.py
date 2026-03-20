@@ -24,7 +24,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # В группе — реагируем только на упоминание бота
     is_private = message.chat.type == "private"
-    is_mentioned = f"@{context.bot.username}" in (message.text or "")
+    is_mentioned = (
+        f"@{context.bot.username}" in (message.text or "") or
+        "стасик" in (message.text or "").lower()
+    )
     is_reply_to_bot = (
         message.reply_to_message and
         message.reply_to_message.from_user.id == context.bot.id
