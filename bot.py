@@ -54,14 +54,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_private and not is_mentioned and not is_reply_to_bot:
         return
 
-    # Отвечаем
-    history = conversation_history[chat_id][-50:]
+    # Формируем контекст чата отдельно
+    chat_context = "\n".join([
+        msg["content"] for msg in conversation_history[chat_id][-50:]
+    ])
+
     try:
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=1024,
-            system="Ты участник группового чата по имени Стасик. Ты читаешь все сообщения группы и знаешь контекст беседы. Отвечай естественно, как живой участник чата. Обращайся к людям по имени.",
-            messages=history
+            system=f"""Ты участник группового чата по имени Стасик. 
+Вот последние сообщения чата (формат "Имя: сообщение"):
+
+{chat_context}
+
+Ты видишь всех участников и знаешь контекст всей беседы. Отвечай естественно, обращайся к людям по имени.""",
+            messages=[{"role": "user", "content": f"{user_name}: {text}"}]
         )
         reply = response.content[0].text
         conversation_history[chat_id].append({
