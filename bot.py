@@ -22,12 +22,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not message or not message.text:
         return
 
-    # В группе — реагируем только на упоминание бота
+    chat_id = message.chat_id
+    user_name = message.from_user.first_name or "Участник"
+    text = message.text
+
+    # Инициализируем историю чата
+    if chat_id not in conversation_history:
+        conversation_history[chat_id] = []
+
+    # Всегда сохраняем сообщение в историю с именем автора
+    conversation_history[chat_id].append({
+        "role": "user",
+        "content": f"{user_name}: {text}"
+    })
+
+    # Ограничиваем историю последними 50 сообщениями
+    conversation_history[chat_id] = conversation_history[chat_id][-50:]
+
+    # Проверяем нужно ли отвечать
     is_private = message.chat.type == "private"
     is_mentioned = (
-        f"@{context.bot.username}" in (message.text or "") or
-        "стасик" in (message.text or "").lower() or
-	"ботик" in (message.text or "").lower()
+        f"@{context.bot.username}" in text or
+        "стасик" in text.lower() or
+        "ботик" in text.lower()
     )
     is_reply_to_bot = (
         message.reply_to_message and
@@ -37,25 +54,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_private and not is_mentioned and not is_reply_to_bot:
         return
 
-    # Убираем упоминание из текста
-    user_text = message.text.replace(f"@{context.bot.username}", "").strip()
-    user_id = message.chat_id
-
-    if user_id not in conversation_history:
-        conversation_history[user_id] = []
-
-    conversation_history[user_id].append({"role": "user", "content": user_text})
-    history = conversation_history[user_id][-20:]
-
+    # Отвечаем
+    history = conversation_history[chat_id][-50:]
     try:
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=1024,
-            system="Ты полезный ассистент. Отвечай кратко и по делу.",
+            system="Ты участник группового чата по имени Стасик. Ты читаешь все сообщения группы и знаешь контекст беседы. Отвечай естественно, как живой участник чата. Обращайся к людям по имени.",
             messages=history
         )
         reply = response.content[0].text
-        conversation_history[user_id].append({"role": "assistant", "content": reply})
+        conversation_history[chat_id].append({
+            "role": "assistant",
+            "content": reply
+        })
         await message.reply_text(reply)
     except Exception as e:
         await message.reply_text(f"Ошибка: {str(e)}")
