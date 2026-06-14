@@ -47,7 +47,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_private and not is_mentioned and not is_reply_to_bot:
         return
     chat_context = "\n".join([msg["content"] for msg in conversation_history[chat_id][-50:]])
-    search_results = search_web(text)
+    search_query = text + " Україна UAH гривна"
+    search_results = search_web(search_query)
     try:
         today = datetime.now().strftime("%d.%m.%Y")
         response = client.messages.create(
