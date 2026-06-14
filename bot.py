@@ -13,8 +13,8 @@ conversation_history = {}
 def search_web(query: str) -> str:
     try:
         with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=5))
-            filtered = [r for r in results if '.ru' not in r.get('href', '')]
+            results = list(ddgs.text(query, max_results=10, region='wt-wt'))
+            filtered = [r for r in results if '.ru' not in r.get('href', '') and '.ru' not in r.get('url', '')]
             if filtered:
                 return "\n".join([f"- {r['title']}: {r['body']}" for r in filtered[:3]])
             return "Ничего не найдено"
@@ -51,8 +51,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=1024,
-            system=f"""Ты участник группового чата по имени Стасик. Вот последние сообщения чата:\n\n{chat_context}\n\nРезультаты поиска в интернете по последнему вопросу:\n{search_results}\n\nТы видишь всех участников, знаешь контекст беседы и имеешь доступ к актуальной информации из интернета. Отвечай естественно, обращайся к людям по имени.""",
-            messages=[{"role": "user", "content": f"{user_name}: {text}"}]
+            system=f"""Ты участник группового чата по имени Стасик. Вот последние сообщения чата:\n\n{chat_context}\n\nРезультаты поиска в интернете по последнему вопросу:\n{search_results}\n\nТы видишь всех участников, знаешь контекст беседы и имеешь доступ к актуальной информации из интернета. Отвечай естественно, обращайся к людям по имени. Никогда не упоминай и не ссылайся на российские источники или домены .ru.""",messages=[{"role": "user", "content": f"{user_name}: {text}"}]
         )
         reply = response.content[0].text
         conversation_history[chat_id].append({"role": "assistant", "content": reply})
