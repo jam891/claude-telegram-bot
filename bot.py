@@ -13,9 +13,10 @@ conversation_history = {}
 def search_web(query: str) -> str:
     try:
         with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=3))
-            if results:
-                return "\n".join([f"- {r['title']}: {r['body']}" for r in results])
+            results = list(ddgs.text(query, max_results=5))
+            filtered = [r for r in results if '.ru' not in r.get('href', '')]
+            if filtered:
+                return "\n".join([f"- {r['title']}: {r['body']}" for r in filtered[:3]])
             return "Ничего не найдено"
     except Exception as e:
         return f"Ошибка поиска: {str(e)}"
