@@ -1,11 +1,10 @@
 import os
 import anthropic
-import urllib.parse
-import urllib.request
-import json
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+from tavily import TavilyClient
 
+tavily = TavilyClient(api_key=os.environ.get("TAVILY_API_KEY"))
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
@@ -14,22 +13,14 @@ conversation_history = {}
 
 def search_web(query: str) -> str:
     try:
-        import urllib.request
-        import json
-        url = f"https://api.duckduckgo.com/?q={urllib.parse.quote(query)}&format=json&no_html=1"
-        req = urllib.request.urlopen(url, timeout=5)
-        data = json.loads(req.read())
-        results = []
-        if data.get('AbstractText'):
-            results.append(data['AbstractText'])
-        for topic in data.get('RelatedTopics', [])[:3]:
-            if isinstance(topic, dict) and topic.get('Text'):
-                if '.ru' not in topic.get('FirstURL', ''):
-                    results.append(topic['Text'])
-        return "\n".join(results) if results else "Ничего не найдено"
+        response = tavily.search(query=query, max_results=3, exclude_domains=["ru"])
+        results = response.get("results", [])
+        if results:
+            return "\n".join([f"- {r['title']}: {r['content']}" for r in results])
+        return "Ничего не найдено"
     except Exception as e:
         return f"Ошибка поиска: {str(e)}"
-
+        
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Я бот на базе Claude. Задай мне любой вопрос!")
 
