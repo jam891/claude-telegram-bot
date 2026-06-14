@@ -1,8 +1,10 @@
 import os
 import anthropic
+import urllib.parse
+import urllib.request
+import json
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-from duckduckgo_search import DDGS
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
@@ -12,19 +14,19 @@ conversation_history = {}
 
 def search_web(query: str) -> str:
     try:
-        with DDGS() as ddgs:
-            # Сначала украинский регион
-            results = list(ddgs.text(query, max_results=10, region='ua-uk'))
-            filtered = [r for r in results if '.ru' not in r.get('href', '')]
-            
-            # Если не нашло — глобальный поиск
-            if not filtered:
-                results = list(ddgs.text(query, max_results=10))
-                filtered = [r for r in results if '.ru' not in r.get('href', '')]
-            
-            if filtered:
-                return "\n".join([f"- {r['title']}: {r['body']}" for r in filtered[:3]])
-            return "Ничего не найдено"
+        import urllib.request
+        import json
+        url = f"https://api.duckduckgo.com/?q={urllib.parse.quote(query)}&format=json&no_html=1"
+        req = urllib.request.urlopen(url, timeout=5)
+        data = json.loads(req.read())
+        results = []
+        if data.get('AbstractText'):
+            results.append(data['AbstractText'])
+        for topic in data.get('RelatedTopics', [])[:3]:
+            if isinstance(topic, dict) and topic.get('Text'):
+                if '.ru' not in topic.get('FirstURL', ''):
+                    results.append(topic['Text'])
+        return "\n".join(results) if results else "Ничего не найдено"
     except Exception as e:
         return f"Ошибка поиска: {str(e)}"
 
