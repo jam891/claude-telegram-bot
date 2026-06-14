@@ -1,5 +1,6 @@
 import os
 import anthropic
+from datetime import datetime
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from tavily import TavilyClient
@@ -48,10 +49,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_context = "\n".join([msg["content"] for msg in conversation_history[chat_id][-50:]])
     search_results = search_web(text)
     try:
+        today = datetime.now().strftime("%d.%m.%Y")
         response = client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=1024,
-            system=f"""Ты участник группового чата по имени Стасик. Вот последние сообщения чата:\n\n{chat_context}\n\nРезультаты поиска в интернете по последнему вопросу:\n{search_results}\n\nТы видишь всех участников, знаешь контекст беседы и имеешь доступ к актуальной информации из интернета. Отвечай естественно, обращайся к людям по имени. Ты находишься в Украине, используй украинский контекст — гривна (UAH), украинские источники. Никогда не упоминай российские источники, рубли или домены .ru.""",)
+            system=f"""Сегодня {today}. Ты участник группового чата по имени Стасик. Вот последние сообщения чата:\n\n{chat_context}\n\nРезультаты поиска в интернете по последнему вопросу:\n{search_results}\n\nТы видишь всех участников, знаешь контекст беседы и имеешь доступ к актуальной информации из интернета. Отвечай естественно, обращайся к людям по имени. Ты находишься в Украине, используй украинский контекст — гривна (UAH), украинские источники. Никогда не упоминай российские источники, рубли или домены .ru.""",)
         reply = response.content[0].text
         conversation_history[chat_id].append({"role": "assistant", "content": reply})
         await message.reply_text(reply)
