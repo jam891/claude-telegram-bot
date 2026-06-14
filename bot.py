@@ -13,8 +13,11 @@ conversation_history = {}
 def search_web(query: str) -> str:
     try:
         with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=10, region='wt-wt'))
-            filtered = [r for r in results if '.ru' not in r.get('href', '') and '.ru' not in r.get('url', '')]
+            results = list(ddgs.text(query, max_results=10, region='ua-uk'))
+            filtered = [r for r in results if '.ru' not in r.get('href', '')]
+            if not filtered:
+                results = list(ddgs.text(query, max_results=10, region='wt-wt'))
+                filtered = [r for r in results if '.ru' not in r.get('href', '')]
             if filtered:
                 return "\n".join([f"- {r['title']}: {r['body']}" for r in filtered[:3]])
             return "Ничего не найдено"
