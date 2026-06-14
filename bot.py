@@ -13,7 +13,7 @@ conversation_history = {}
 
 def search_web(query: str) -> str:
     try:
-        response = tavily.search(query=query, max_results=3, exclude_domains=["ru"])
+        response = tavily.search(query=query, max_results=3, exclude_domains=[".ru", "vk.com", "ok.ru", "mail.ru", "yandex.ru"])
         results = response.get("results", [])
         if results:
             return "\n".join([f"- {r['title']}: {r['content']}" for r in results])
